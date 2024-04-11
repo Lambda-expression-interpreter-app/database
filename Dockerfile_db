@@ -1,0 +1,4 @@
+FROM mysql:8.3.0
+WORKDIR /app
+COPY init_database.sql ./init_database.sql
+RUN mysql -u root -p < init_database.sql

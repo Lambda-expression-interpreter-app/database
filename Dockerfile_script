@@ -1,0 +1,7 @@
+FROM haskell:9.6.4
+RUN cabal install --lib mysql-simple
+WORKDIR /app
+COPY Main.hs ./Main.hs
+COPY Makefile ./Makefile
+RUN make build
+CMD ["make", "run"]
