@@ -34,22 +34,33 @@ BEGIN
 END//
 DELIMITER ;
 
+-- TODO: Modify the definition from the testing database from procedure to function
 DELIMITER //
-CREATE PROCEDURE add_user(IN username VARCHAR(50), IN password VARCHAR(255), IN email VARCHAR(100))
+CREATE FUNCTION add_user(username VARCHAR(50), password VARCHAR(255), email VARCHAR(100)) RETURNS BOOLEAN
+MODIFIES SQL DATA
+NOT DETERMINISTIC
 BEGIN
     DECLARE user_id INT(20);
     SELECT id INTO user_id FROM users WHERE username = username;
     IF user_id IS NOT NULL THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'User already exists';
+        RETURN FALSE;
     END IF;
     INSERT INTO users (username, password, email) VALUES (username, password, email);
+    RETURN TRUE;
 END//
 DELIMITER ;
 
+-- TODO: Modify the definition from the testing database from procedure to function
 DELIMITER //
-CREATE PROCEDURE delete_user(IN username VARCHAR(50))
+CREATE FUNCTION delete_user(username VARCHAR(50), email VARCHAR(100)) RETURNS BOOLEAN
+MODIFIES SQL DATA
+NOT DETERMINISTIC
 BEGIN
-    DELETE FROM users WHERE username = username;
+    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION
+    BEGIN
+        RETURN FALSE;
+    END;
+    DELETE FROM users WHERE username = username AND email = email;
+    RETURN TRUE;
 END//
 DELIMITER ;

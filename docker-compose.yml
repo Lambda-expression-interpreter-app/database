@@ -20,6 +20,8 @@ services:
             Dockerfile: Dockerfile_script
         depends_on:
             - database
+        ports:
+            - "5000:5000"
         networks:
             - idp_network
             - db_network
