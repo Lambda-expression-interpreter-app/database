@@ -2,14 +2,17 @@
 
 module Main where
 
+import Debug.Trace
 import Data.Text.Lazy as Text (Text, pack)
 import Data.Maybe
 import Control.Applicative
+import Control.Exception
 
 import Database.MySQL.Simple
 import Data.Aeson
 import Data.Aeson.Types (Parser)
 import Web.Scotty
+import GHC.Base (IO(IO))
 
 data Credentials = Credentials {
     user :: String,
@@ -20,15 +23,16 @@ data Credentials = Credentials {
 instance FromJSON Credentials where
     parseJSON :: Value -> Parser Credentials
     parseJSON = withObject "Credentials" $ \v -> Credentials
-        <$> v .: "user"
-        <*> v .:? "pass"
+        <$> v .: "username"
+        <*> v .:? "password"
         <*> v .:? "email"
 
-newtype Response = Response {success :: Bool} deriving (Show)
+data Response = BoolResp Bool | StringResp String deriving (Show)
 
 instance ToJSON Response where
     toJSON :: Response -> Value
-    toJSON (Response success) = object ["success" .= success]
+    toJSON (BoolResp success) = object ["success" .= success]
+    toJSON (StringResp msg) = object ["success" .= msg]
 
 -- Database information
 connString :: ConnectInfo
@@ -47,40 +51,43 @@ checkIfUserExists user pass = do
     close conn
     return $ fromOnly $ head res
 
-addUser :: String -> String -> String -> IO Bool
+addUser :: String -> String -> String -> IO String
 addUser user pass email = do
     conn <- connect connString
-    res <- query conn "SELECT add_user(?, ?, ?);" ([user, pass, email] :: [String]) :: IO [Only Bool]
+    res <- try $ execute conn "CALL add_user(?, ?, ?);" ([user, pass, email] :: [String])
     close conn
-    return $ fromOnly $ head res
+    case res of
+        Left (SomeException _) -> return "User already exists."
+        Right x -> return $ if x > 0 then "Success" else "Failed to add user."
 
--- This function removes all the accounts with a given username
-removeUser :: String -> String -> IO Bool
+removeUser :: String -> String -> IO String
 removeUser user email = do
     conn <- connect connString
-    res <- query conn "SELECT delete_user(?, ?);" ([user, email] :: [String]) :: IO [Only Bool] -- need to check the database implementation
+    res <- try $ execute conn "CALL delete_user(?, ?);" ([user, email] :: [String])
     close conn
-    return $ fromOnly $ head res
+    case res of
+        Left (SomeException _) -> return "User does not exist."
+        Right x -> return $ if x > 0 then "Success" else "Failed to delete user."
 
 main :: IO ()
 main = do
-    scotty 5000 $ do
+    scotty 25000 $ do
         post "/login" $ do
             creds <- jsonData :: ActionM Credentials
             let username = user creds
                 password = fromJust $ pass creds
             res <- liftIO $ checkIfUserExists username password
-            json $ Response res
+            json $ BoolResp res
         post "/register" $ do
             creds <- jsonData :: ActionM Credentials
             let username = user creds
                 password = fromJust $ pass creds
                 emailAddr = fromJust $ email creds
             res <- liftIO $ addUser username password emailAddr
-            json $ Response res
+            json $ StringResp res
         post "/unregister" $ do
             creds <- jsonData :: ActionM Credentials
             let username = user creds
                 emailAddr = fromJust $ email creds
             res <- liftIO $ removeUser username emailAddr
-            json $ Response res
+            json $ StringResp res

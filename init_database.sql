@@ -14,19 +14,19 @@ COLLATE = utf8_unicode_ci; -- collation is the set of rules used for comparing c
 
 -- change the delimiter to // so that we can use ; in the function
 DELIMITER //
-CREATE FUNCTION check_user_password(username VARCHAR(50), password VARCHAR(255)) RETURNS BOOLEAN
+CREATE FUNCTION check_user_password(p_username VARCHAR(50), p_password VARCHAR(255)) RETURNS BOOLEAN
 READS SQL DATA
 NOT DETERMINISTIC
 BEGIN
     DECLARE user_id INT(20);
     DECLARE user_password VARCHAR(255);
-    SELECT id, password INTO user_id, user_password FROM users WHERE username = username;
+    SELECT id, password INTO user_id, user_password FROM users WHERE username = p_username;
 
     IF user_id IS NULL THEN
         RETURN FALSE;
     END IF;
 
-    IF user_password = password THEN
+    IF user_password = p_password THEN
         RETURN TRUE;
     END IF;
     
@@ -34,33 +34,22 @@ BEGIN
 END//
 DELIMITER ;
 
--- TODO: Modify the definition from the testing database from procedure to function
 DELIMITER //
-CREATE FUNCTION add_user(username VARCHAR(50), password VARCHAR(255), email VARCHAR(100)) RETURNS BOOLEAN
-MODIFIES SQL DATA
-NOT DETERMINISTIC
+CREATE PROCEDURE add_user(IN p_username VARCHAR(50), IN p_password VARCHAR(255), IN p_email VARCHAR(100))
 BEGIN
     DECLARE user_id INT(20);
-    SELECT id INTO user_id FROM users WHERE username = username;
+    SELECT id INTO user_id FROM users WHERE username = p_username;
     IF user_id IS NOT NULL THEN
-        RETURN FALSE;
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'User already exists';
     END IF;
-    INSERT INTO users (username, password, email) VALUES (username, password, email);
-    RETURN TRUE;
-END//
+    INSERT INTO users (username, password, email) VALUES (p_username, p_password, p_email);
+END //
 DELIMITER ;
 
--- TODO: Modify the definition from the testing database from procedure to function
 DELIMITER //
-CREATE FUNCTION delete_user(username VARCHAR(50), email VARCHAR(100)) RETURNS BOOLEAN
-MODIFIES SQL DATA
-NOT DETERMINISTIC
+CREATE PROCEDURE delete_user(IN p_username VARCHAR(50), IN p_email VARCHAR(100))
 BEGIN
-    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION
-    BEGIN
-        RETURN FALSE;
-    END;
-    DELETE FROM users WHERE username = username AND email = email;
-    RETURN TRUE;
+    DELETE FROM users WHERE username = p_username AND email = p_email;
 END//
 DELIMITER ;
