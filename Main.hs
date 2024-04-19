@@ -12,7 +12,6 @@ import Database.MySQL.Simple
 import Data.Aeson
 import Data.Aeson.Types (Parser)
 import Web.Scotty
-import GHC.Base (IO(IO))
 
 data Credentials = Credentials {
     user :: String,
@@ -57,8 +56,8 @@ addUser user pass email = do
     res <- try $ execute conn "CALL add_user(?, ?, ?);" ([user, pass, email] :: [String])
     close conn
     case res of
-        Left (SomeException _) -> return "User already exists."
-        Right x -> return $ if x > 0 then "Success" else "Failed to add user."
+        Left (SomeException _) -> return "Failed to register user."
+        Right x -> return $ if x > 0 then "Success" else "User already exists."
 
 removeUser :: String -> String -> IO String
 removeUser user email = do
@@ -66,8 +65,8 @@ removeUser user email = do
     res <- try $ execute conn "CALL delete_user(?, ?);" ([user, email] :: [String])
     close conn
     case res of
-        Left (SomeException _) -> return "User does not exist."
-        Right x -> return $ if x > 0 then "Success" else "Failed to delete user."
+        Left (SomeException _) -> return "Failed to unregister user."
+        Right x -> return $ if x > 0 then "Success" else "User does not exist."
 
 main :: IO ()
 main = do
