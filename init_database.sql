@@ -3,9 +3,9 @@ USE credentials;
 
 CREATE TABLE IF NOT EXISTS users (
     id INT(20) NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(130) NOT NULL,
-    password VARCHAR(130) NOT NULL,
-    email VARCHAR(130) NOT NULL,
+    username VARCHAR(50) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
 ENGINE = InnoDB
@@ -14,7 +14,7 @@ COLLATE = utf8_unicode_ci; -- collation is the set of rules used for comparing c
 
 -- change the delimiter to // so that we can use ; in the function
 DELIMITER //
-CREATE FUNCTION check_user_password(p_username VARCHAR(130), p_password VARCHAR(130)) RETURNS BOOLEAN
+CREATE FUNCTION check_user_password(p_username VARCHAR(50), p_password VARCHAR(255)) RETURNS BOOLEAN
 READS SQL DATA
 NOT DETERMINISTIC
 BEGIN
@@ -35,7 +35,7 @@ END//
 DELIMITER ;
 
 DELIMITER //
-CREATE PROCEDURE add_user(IN p_username VARCHAR(130), IN p_password VARCHAR(130), IN p_email VARCHAR(130))
+CREATE PROCEDURE add_user(IN p_username VARCHAR(50), IN p_password VARCHAR(255), IN p_email VARCHAR(100))
 BEGIN
     DECLARE user_id INT(20);
     SELECT id INTO user_id FROM users WHERE username = p_username;
@@ -48,7 +48,7 @@ END //
 DELIMITER ;
 
 DELIMITER //
-CREATE PROCEDURE delete_user(IN p_username VARCHAR(130), IN p_email VARCHAR(130))
+CREATE PROCEDURE delete_user(IN p_username VARCHAR(50), IN p_email VARCHAR(100))
 BEGIN
     DELETE FROM users WHERE username = p_username AND email = p_email;
 END//

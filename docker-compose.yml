@@ -1,9 +1,9 @@
-version: '3.1'
+version: "3.8"
 services:
     database:
         build:
             context: .
-            Dockerfile: Dockerfile_db
+            dockerfile: Dockerfile_db
         environment:
             MYSQL_ROOT_PASSWORD: idp_database
         ports:
@@ -13,19 +13,19 @@ services:
         networks:
             - idp_network
             - db_network
-    
     script:
         build:
             context: .
-            Dockerfile: Dockerfile_script
+            dockerfile: Dockerfile_script
         depends_on:
             - database
         ports:
-            - "5000:5000"
+            - "25000:25000"
         networks:
             - idp_network
             - db_network
-    
+        stdin_open: false
+        tty: false    
     dbms:
         image: adminer
         ports:
@@ -34,9 +34,20 @@ services:
             - db_network
         depends_on:
             - database
-
+    auth:
+        build:
+            context: ../authentication
+            dockerfile: Dockerfile
+        networks:
+            - idp_network
+            - db_network 
+        stdin_open: true
+        tty: true
 networks:
     idp_network:
         driver: bridge
     db_network:
         driver: bridge
+
+volumes:
+    db: {}    
