@@ -36,7 +36,7 @@ instance ToJSON Response where
 -- Database information
 connString :: ConnectInfo
 connString = defaultConnectInfo {
-    connectHost = "127.0.0.1",
+    connectHost = "database",
     connectPort = 3306,
     connectUser = "root",
     connectPassword = "idp_database",
