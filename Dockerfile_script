@@ -1,7 +1,7 @@
 FROM haskell:9.6.4
 RUN apt-get update && apt-get install -y gnutls-bin
 RUN cabal update
-RUN cabal install --lib mysql-simple
+RUN cabal install --lib mongoDB
 RUN cabal install --lib scotty
 RUN cabal install --lib http-types
 RUN cabal install --lib aeson

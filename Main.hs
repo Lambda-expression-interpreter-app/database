@@ -8,7 +8,7 @@ import Data.Maybe
 import Control.Applicative
 import Control.Exception
 
-import Database.MySQL.Simple
+import Database.MongoDB hiding (Value, addUser, removeUser)
 import Data.Aeson
 import Data.Aeson.Types (Parser)
 import Web.Scotty
@@ -34,43 +34,42 @@ instance ToJSON Response where
     toJSON (StringResp msg) = object ["success" .= msg]
 
 -- Database information
-connString :: ConnectInfo
-connString = defaultConnectInfo {
-    connectHost = "database",
-    connectPort = 3306,
-    connectUser = "root",
-    connectPassword = "idp_database",
-    connectDatabase = "credentials"
-}
+connString :: String
+connString = "mongodb://localhost:27017/Users"
 
 checkIfUserExists :: String -> String -> IO Bool
-checkIfUserExists user pass = do
-    conn <- connect connString
-    res <- query conn "SELECT check_user_password(?, ?);" ([user, pass] :: [String]) :: IO [Only Bool]
-    close conn
-    return $ fromOnly $ head res
+checkIfUserExists username password = do
+    pipe <- connect (host "mongodb")
+    docs <- access pipe master "credentials" $ do
+        cursor <- find (select ["username" =: username, "password" =: password] "users")
+        rest cursor
+    close pipe
+    return $ not $ Prelude.null docs
 
 addUser :: String -> String -> String -> IO String
 addUser user pass email = do
-    conn <- connect connString
-    res <- try $ execute conn "CALL add_user(?, ?, ?);" ([user, pass, email] :: [String])
-    close conn
-    case res of
-        Left (SomeException _) -> return "Failed to register user."
-        Right x -> return $ if x > 0 then "Success" else "User already exists."
+    pipe <- connect (host "mongodb")
+    exists <- checkIfUserExists user pass
+    if exists
+        then return "User already exists."
+        else do
+            access pipe master "credentials" $ insert "users" ["username" =: user, "password" =: pass, "email" =: email]
+            close pipe
+            return "Success"
 
 removeUser :: String -> String -> IO String
 removeUser user email = do
-    conn <- connect connString
-    res <- try $ execute conn "CALL delete_user(?, ?);" ([user, email] :: [String])
-    close conn
-    case res of
-        Left (SomeException _) -> return "Failed to unregister user."
-        Right x -> return $ if x > 0 then "Success" else "User does not exist."
+    pipe <- connect (host "mongodb")
+    exists <- access pipe master "credentials" $ do
+        findAndModify (select ["username" =: user, "email" =: email] "users") ["$unset" =: ["username" =: (1 :: Int), "email" =: (1 :: Int)]]
+    close pipe
+    return $ case exists of
+        Left x -> x
+        _ -> "Success"
 
 main :: IO ()
 main = do
-    scotty 25000 $ do
+    scotty 6000 $ do
         post "/login" $ do
             creds <- jsonData :: ActionM Credentials
             let username = user creds

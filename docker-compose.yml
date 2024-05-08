@@ -1,40 +1,37 @@
 version: "3.8"
 services:
-    database:
-        build:
-            context: .
-            dockerfile: Dockerfile_db
-        environment:
-            MYSQL_DATABASE: credentials
-            MYSQL_ROOT_PASSWORD: idp_database
+    mongodb:
+        image: "mongo:latest"
         ports:
-            - "3306:3306"
-        volumes:
-            - db:/var/lib/mysql
+            - "27017:27017"
         networks:
             - idp_network
             - db_network
+        volumes:
+            - mongo_data:/data/db
     script:
         build:
             context: .
             dockerfile: Dockerfile_script
         depends_on:
-            - database
+            - mongodb
         ports:
-            - "25000:25000"
+            - "6000:6000"
         networks:
             - idp_network
             - db_network
+        environment:
+            MONGO_URI: mongodb://mongodb:27017/Users
         stdin_open: false
         tty: false    
     dbms:
-        image: adminer
+        image: mongo-express
         ports:
-            - "8080:8080"
+            - "8081:8081"
         networks:
-            - db_network
-        depends_on:
-            - database
+            - idp_network
+        environment:
+            ME_CONFIG_MONGODB_URL: mongodb://mongodb:27017
     auth:
         build:
             context: ../authentication
@@ -45,9 +42,9 @@ services:
         tty: true
 networks:
     idp_network:
-        driver: bridge
+        driver: overlay
     db_network:
-        driver: bridge
+        driver: overlay
 
 volumes:
-    db: {}    
+    mongo_data: {}    
