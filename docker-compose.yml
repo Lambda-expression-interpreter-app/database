@@ -9,6 +9,7 @@ services:
             - db_network
         volumes:
             - mongo_data:/data/db
+    
     script:
         build:
             context: .
@@ -24,6 +25,7 @@ services:
             MONGO_URI: mongodb://mongodb:27017/Users
         stdin_open: false
         tty: false    
+    
     dbms:
         image: mongo-express
         ports:
@@ -32,6 +34,7 @@ services:
             - idp_network
         environment:
             ME_CONFIG_MONGODB_URL: mongodb://mongodb:27017
+    
     auth:
         build:
             context: ../authentication
@@ -40,6 +43,7 @@ services:
             - idp_network 
         stdin_open: true
         tty: true
+    
     compiler:
         build:
             context: ../interpreter
@@ -51,6 +55,7 @@ services:
             - db_network
         stdin_open: false
         tty: false
+
 networks:
     idp_network:
         driver: bridge
