@@ -33,10 +33,6 @@ instance ToJSON Response where
     toJSON (BoolResp success) = object ["success" .= success]
     toJSON (StringResp msg) = object ["success" .= msg]
 
--- Database information
-connString :: String
-connString = "mongodb://localhost:27017/Users"
-
 checkIfUserExists :: String -> String -> IO Bool
 checkIfUserExists username password = do
     pipe <- connect (host "mongodb")
@@ -60,11 +56,11 @@ addUser user pass email = do
 removeUser :: String -> String -> IO String
 removeUser user email = do
     pipe <- connect (host "mongodb")
-    exists <- access pipe master "credentials" $ do
-        findAndModify (select ["username" =: user, "email" =: email] "users") ["$unset" =: ["username" =: (1 :: Int), "email" =: (1 :: Int)]]
+    result <- access pipe master "credentials" $ do
+        findAndModify (select ["username" =: user, "email" =: email] "users") ["$unset" =: ["username" =: ("" :: String), "email" =: ("" :: String)]]
     close pipe
-    return $ case exists of
-        Left x -> x
+    return $ case result of
+        Left _ -> "User doesn't exist."
         _ -> "Success"
 
 main :: IO ()

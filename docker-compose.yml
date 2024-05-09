@@ -42,9 +42,9 @@ services:
         tty: true
 networks:
     idp_network:
-        driver: overlay
+        driver: bridge
     db_network:
-        driver: overlay
+        driver: bridge
 
 volumes:
     mongo_data: {}    
