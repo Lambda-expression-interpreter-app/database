@@ -1,5 +1,0 @@
-FROM mysql
-WORKDIR /app
-ENV MYSQL_ROOT_PASSWORD idp_database
-ADD init_database.sql /docker-entrypoint-initdb.d
-EXPOSE 3306
