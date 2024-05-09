@@ -2,7 +2,6 @@
 
 module Main where
 
-import Debug.Trace
 import Data.Text.Lazy as Text (Text, pack)
 import Data.Maybe
 import Control.Applicative
