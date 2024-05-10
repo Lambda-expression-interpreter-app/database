@@ -11,9 +11,7 @@ services:
             - mongo_data:/data/db
     
     script:
-        build:
-            context: .
-            dockerfile: Dockerfile_script
+        image: "radubreazu/idp:script"
         depends_on:
             - mongodb
         ports:
@@ -36,20 +34,16 @@ services:
             ME_CONFIG_MONGODB_URL: mongodb://mongodb:27017
     
     auth:
-        build:
-            context: ../authentication
-            dockerfile: Dockerfile
+        image: "radubreazu/idp:authentication"
         networks:
             - idp_network 
         stdin_open: true
         tty: true
     
-    compiler:
-        build:
-            context: ../interpreter
-            dockerfile: Dockerfile
+    interpreter:
+        image: "radubreazu/idp:interpreter"
         ports:
-            - "8000:8000"
+            - "8001:8001"
         networks:
             - idp_network
             - db_network
